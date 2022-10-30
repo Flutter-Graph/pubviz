@@ -15,7 +15,9 @@ import 'package:pubviz/viz/dot.dart' as dot;
 import 'package:stack_trace/stack_trace.dart';
 
 Future<void> main(List<String> args) async {
-  parser..addCommand('open')..addCommand('print');
+  parser
+    ..addCommand('open')
+    ..addCommand('print');
 
   Options options;
   try {
@@ -50,33 +52,39 @@ Future<void> main(List<String> args) async {
 
   final path = _getPath(command.rest);
 
-  await Chain.capture(() async {
-    final service = PubDataService(path);
-    final vp = await VizRoot.forDirectory(
-      service,
-      flagOutdated: options.flagOutdated,
-      ignorePackages: options.ignorePackages,
-      directDependenciesOnly: options.directDependencies,
-      productionDependenciesOnly: options.productionDependencies,
-    );
-    if (command.name == 'print') {
-      _printContent(vp, options.format, options.ignorePackages);
-    } else if (command.name == 'open') {
-      await _open(vp, options.format, options.ignorePackages);
-    } else {
-      throw StateError('Should never get here...');
-    }
-  }, onError: (error, Chain chain) {
-    stderr..writeln(error)..writeln(chain.terse);
-    exitCode = 1;
-  });
+  await Chain.capture(
+    () async {
+      final service = PubDataService(path);
+      final vp = await VizRoot.forDirectory(
+        service,
+        flagOutdated: options.flagOutdated,
+        ignorePackages: options.ignorePackages,
+        directDependenciesOnly: options.directDependencies ?? false,
+        productionDependenciesOnly: options.productionDependencies,
+      );
+      if (command.name == 'print') {
+        _printContent(vp, options.format, options.ignorePackages);
+      } else if (command.name == 'open') {
+        await _open(vp, options.format, options.ignorePackages);
+      } else {
+        throw StateError('Should never get here...');
+      }
+    },
+    onError: (error, Chain chain) {
+      stderr
+        ..writeln(error)
+        ..writeln(chain.terse);
+      exitCode = 1;
+    },
+  );
 }
 
 String _indent(String input) =>
     LineSplitter.split(input).map((l) => '  $l'.trimRight()).join('\n');
 
 void _printUsage() {
-  print('''Usage: pubviz [<args>] <command> [<package path>]
+  print(
+    '''Usage: pubviz [<args>] <command> [<package path>]
 
 ${styleBold.wrap('Commands:')}
   open   Populate a temporary file with the content and open it.
@@ -85,7 +93,8 @@ ${styleBold.wrap('Commands:')}
 ${styleBold.wrap('Arguments:')}
 ${_indent(parser.usage)}
 
-If <package path> is omitted, the current directory is used.''');
+If <package path> is omitted, the current directory is used.''',
+  );
 }
 
 String _getContent(
@@ -99,12 +108,11 @@ String _getContent(
     case FormatOptions.dot:
       return dot.toDot(root, ignorePackages: ignorePackages);
   }
-  throw StateError('format "$format" is not supported');
 }
 
 String _getExtension(FormatOptions format) => format.toString().split('.')[1];
 
-Future _open(
+Future<void> _open(
   VizRoot root,
   FormatOptions format,
   List<String> ignorePackages,
@@ -117,7 +125,7 @@ Future _open(
 
   file = await file.create();
   final content = _getContent(root, format, ignorePackages);
-  await file.writeAsString(content, mode: FileMode.write, flush: true);
+  await file.writeAsString(content, flush: true);
 
   print('File generated: $filePath');
 
@@ -133,7 +141,7 @@ Future _open(
     exit(1);
   }
 
-  return Process.run(openCommand, [filePath], runInShell: true);
+  await Process.run(openCommand, [filePath], runInShell: true);
 }
 
 void _printContent(

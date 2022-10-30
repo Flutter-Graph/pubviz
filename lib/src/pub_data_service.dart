@@ -4,7 +4,6 @@ import 'dart:io';
 import 'deps_list.dart';
 import 'pubspek.dart';
 import 'service.dart';
-import 'util.dart';
 
 class PubDataService extends Service {
   @override
@@ -13,7 +12,7 @@ class PubDataService extends Service {
   final bool _isFlutterPkg;
 
   PubDataService(this.rootPackageDir, {bool debug = false})
-      : _debug = debug ?? false,
+      : _debug = debug,
         _isFlutterPkg = isFlutterPackage(rootPackageDir);
 
   @override
@@ -39,18 +38,18 @@ class PubDataService extends Service {
   }
 
   String _pubCommand(List<String> commandArgs) {
-    final proc = _isFlutterPkg ? 'flutter' : pubPath;
+    final proc = _isFlutterPkg ? 'flutter' : 'dart';
     final args = [
-      if (_isFlutterPkg) ...['packages', 'pub'],
+      ...['pub'],
       ...commandArgs
     ];
 
     _print([proc, ...args].join(' '));
     _print('  in path `$rootPackageDir`');
 
-    final pubEnv = [];
+    final pubEnv = <String>[];
     if (Platform.environment.containsKey(_pubEnvironment)) {
-      final value = Platform.environment[_pubEnvironment].trim();
+      final value = Platform.environment[_pubEnvironment]!.trim();
       if (value.isNotEmpty) {
         pubEnv.add(value);
       }

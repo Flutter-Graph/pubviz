@@ -9,11 +9,13 @@ import 'package:js/js.dart';
 
 final zoomBtn = querySelector('#zoomBtn') as ButtonElement;
 
-svg.SvgElement _root;
+svg.SvgElement? __root;
+
+svg.SvgElement get _root => __root!;
 
 final List<String> _dotContentLines = List.unmodifiable(
   LineSplitter.split(
-    (querySelector('#dot') as ScriptElement).innerHtml.trim(),
+    (querySelector('#dot') as ScriptElement).innerHtml!.trim(),
   ),
 );
 
@@ -23,16 +25,14 @@ void main() {
   _process();
 
   zoomBtn.onClick.listen((_) {
-    if (_root != null) {
-      _root.classes.toggle('zoom');
-    }
+    __root?.classes.toggle('zoom');
   });
 }
 
 void _process() {
-  if (_root != null) {
+  if (__root != null) {
     _root.remove();
-    _root = null;
+    __root = null;
   }
 
   final removedLinesContainingNodeDefinitions = <String>[];
@@ -89,34 +89,38 @@ void _process() {
   try {
     // Default memory: 16,777,216 - 16 MiB
     // Doubling to 32 MiB
-    final output = Viz(lines.join('\n'),
-        VizOptions(format: 'svg', totalMemory: 32 * 1024 * 1024));
+    final output = Viz(
+      lines.join('\n'),
+      VizOptions(format: 'svg', totalMemory: 32 * 1024 * 1024),
+    );
     _updateBody(output);
   } catch (e) {
     final output = '<pre>${htmlEscape.convert(e.toString())}</pre>';
-    document.body.appendHtml(output);
+    document.body!.appendHtml(output);
   } finally {
     print('Total time generating graph: ${watch.elapsed}');
   }
 }
 
 void _updateBody(String output) {
-  assert(_root == null);
+  assert(__root == null);
 
   output = LineSplitter.split(output)
-      .where((line) =>
-          !line.contains('<!--') &&
-          !line.contains('-->') &&
-          !line.contains('?xml'))
+      .where(
+        (line) =>
+            !line.contains('<!--') &&
+            !line.contains('-->') &&
+            !line.contains('?xml'),
+      )
       .join('\n');
 
-  document.body.appendHtml(output, treeSanitizer: NodeTreeSanitizer.trusted);
+  document.body!.appendHtml(output, treeSanitizer: NodeTreeSanitizer.trusted);
   zoomBtn.style.display = 'block';
 
-  _root = querySelector('svg') as svg.SvgElement;
+  __root = querySelector('svg') as svg.SvgElement;
 
   for (var element in _root.querySelectorAll('g.node')) {
-    final title = element.querySelector('title').text;
+    final title = element.querySelector('title')!.text!;
     element.id = title;
   }
 
@@ -140,9 +144,11 @@ void _updateBody(String output) {
   }
 
   for (var node in _root.querySelectorAll('g.edge')) {
-    final title = node.querySelector('title').text;
+    final title = node.querySelector('title')!.text!;
     final things = title.split('->');
-    node..setAttribute('x-from', things[0])..setAttribute('x-to', things[1]);
+    node
+      ..setAttribute('x-from', things[0])
+      ..setAttribute('x-to', things[1]);
 
     // NOTE: we are assuming the shape of the generated SVG here – be careful!
     final textFill = node.querySelector('text')?.getAttribute('fill');
@@ -166,8 +172,8 @@ void _updateBody(String output) {
   });
 }
 
-void _updateOver(svg.GElement element) {
-  final targetPkg = [];
+void _updateOver(svg.GElement? element) {
+  final targetPkg = <String?>[];
   if (element != null) {
     if (element.classes.contains('edge')) {
       targetPkg
@@ -201,11 +207,11 @@ void _updateOver(svg.GElement element) {
       if (targetPkg.contains(node.attributes['x-to']) ||
           targetPkg.contains(node.attributes['x-from'])) {
         if (targetPkg.contains(node.attributes['x-to'])) {
-          fromNodes.add(node.attributes['x-from']);
+          fromNodes.add(node.attributes['x-from']!);
         }
 
         if (targetPkg.contains(node.attributes['x-from'])) {
-          toNodes.add(node.attributes['x-to']);
+          toNodes.add(node.attributes['x-to']!);
         }
 
         node.classes.add('active');
@@ -234,8 +240,8 @@ external String Viz(String src, [VizOptions options]);
 @JS()
 @anonymous
 class VizOptions {
-  String format;
-  int totalMemory;
+  external String format;
+  external int totalMemory;
 
   external factory VizOptions({String format, int totalMemory});
 }
