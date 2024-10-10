@@ -68,10 +68,10 @@ class DepsList extends VersionedEntry {
               for (var usage in section.value.entries)
                 usage.key.toString(): {
                   for (var dep in usage.value.entries)
-                    dep.key: dep.value.toString()
-                }
+                    dep.key: dep.value.toString(),
+                },
             },
-        }
+        },
       };
 }
 
@@ -101,7 +101,7 @@ MapEntry<String, Map<VersionedEntry, Map<String, VersionConstraint>>>
   void scanUsage() {
     scanner.expect(_usageLine, name: 'dependency');
     final entry = VersionedEntry.fromMatch(scanner.lastMatch!);
-    assert(!entries.containsKey(entry.name));
+    assert(!entries.containsKey(entry));
 
     final deps = entries[entry] = {};
 
